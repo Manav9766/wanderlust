@@ -2,9 +2,10 @@
   "name": "majorproject",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "test": "nodemon app.js"
-  },
+   "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  }
   "keywords": [],
   "author": "",
   "license": "ISC",
