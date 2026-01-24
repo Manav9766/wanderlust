@@ -2,7 +2,7 @@
 
 Wanderlust is a full-stack web application inspired by modern vacation rental platforms. It allows users to browse listings, view detailed property information, leave reviews, and manage listings through authenticated accounts.
 
-The project is built using the MERN stack, with a clear separation between frontend and backend, and follows production-ready practices such as authentication, authorization, pagination, and API security.
+The project is built using the MERN stack, with a clear separation between frontend and backend , and follows production-ready practices such as authentication, authorization, pagination, and API security.
 
 ---
 
