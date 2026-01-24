@@ -1,0 +1,257 @@
+:root {
+  --wl-primary: #2563eb;
+}
+
+* {
+  font-family: "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+body {
+  background: #fff;
+}
+
+/* IMPORTANT: kill the Vite starter layout if it’s still active */
+#root {
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  text-align: left !important;
+}
+
+/* Navbar */
+.wl-navbar {
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+
+.wl-brand {
+  color: var(--wl-primary);
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.wl-search {
+  max-width: 520px;
+  width: 100%;
+}
+
+.wl-search .wl-input {
+  border-radius: 999px;
+  padding-left: 18px;
+}
+
+/* smaller pill button */
+.wl-btn-sm {
+  border-radius: 999px;
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+
+.btn-primary.wl-btn-sm {
+  background: var(--wl-primary);
+  border-color: var(--wl-primary);
+}
+
+.btn-primary.wl-btn-sm:hover {
+  background: rgba(37, 99, 235, 0.92);
+  border-color: rgba(37, 99, 235, 0.92);
+}
+
+.wl-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--wl-primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Filter bar wrapper */
+.wl-filterbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-top: 8px;
+  padding-bottom: 6px;
+}
+
+/* Desktop categories strip */
+#wlf-filters {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 22px;
+  overflow-x: auto;
+  padding: 14px 6px 10px;
+  margin-bottom: 0;
+  scrollbar-width: thin;
+}
+
+#wlf-filters::-webkit-scrollbar {
+  height: 8px;
+}
+#wlf-filters::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.18);
+  border-radius: 10px;
+}
+
+.wlf-filter {
+  text-align: center;
+  opacity: 0.72;
+  min-width: 76px;
+  cursor: pointer;
+  user-select: none;
+  padding: 6px 6px 10px;
+  border-bottom: 2px solid transparent;
+}
+
+.wlf-filter i {
+  font-size: 1.25rem;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.wlf-filter:hover {
+  opacity: 1;
+}
+
+.wlf-filter.active {
+  opacity: 1;
+  font-weight: 700;
+  border-bottom-color: rgba(0,0,0,0.75);
+}
+
+/* Sort */
+.wl-sort {
+  min-width: 220px;
+}
+
+/* Mobile categories dropdown */
+.wl-cat-mobile {
+  display: none;
+  flex: 1;
+}
+
+/* switch behavior under lg */
+@media (max-width: 991.98px) {
+  .wl-cat-desktop {
+    display: none;
+  }
+  .wl-cat-mobile {
+    display: block;
+  }
+  .wl-sort {
+    min-width: 180px;
+  }
+}
+
+/* Cards */
+.wl-card {
+  border: none;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.wl-card-img {
+  height: 240px;
+  object-fit: cover;
+  width: 100%;
+  border-radius: 18px;
+}
+
+.wl-card-title {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.wl-card-meta {
+  opacity: 0.8;
+  margin-bottom: 2px;
+}
+
+.wl-heart {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.55);
+  display: grid;
+  place-items: center;
+  border: none;
+}
+
+.wl-heart i {
+  color: white;
+}
+
+.wl-heart.active {
+  background: var(--wl-primary);
+}
+
+.wl-heart:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* App shell to keep footer at bottom */
+html, body {
+  height: 100%;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.wl-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.wl-main {
+  flex: 1;
+}
+
+/* Footer (ported from backend style.css) */
+.f-info {
+  text-align: center;
+  min-height: 8rem;
+  background-color: #ebebeb;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  padding: 18px 10px;
+  gap: 10px;
+}
+
+.f-info-links a {
+  text-decoration: none;
+  color: #222222;
+  margin: 0 10px;
+}
+
+.f-info-links a:hover {
+  text-decoration: underline;
+}
+
+.f-info-links,
+.f-info-socials,
+.f-info-brand {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.f-info-socials i {
+  margin: 0 0.75rem;
+  font-size: 1.2rem;
+}

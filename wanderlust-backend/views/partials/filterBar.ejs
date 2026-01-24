@@ -1,0 +1,98 @@
+<div class="container-fluid my-3">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+    <!-- LEFT (md+): icon categories -->
+    <div class="d-none d-md-flex filters-scroll gap-4">
+      <a href="/listings?category=Trending"
+         class="text-decoration-none text-dark filter-item cursor-pointer <%= category === 'Trending' ? 'filter-active' : '' %>">
+        <i class="fa-solid fa-fire"></i>
+        <span>Trending</span>
+      </a>
+
+      <a href="/listings?category=Rooms"
+         class="text-decoration-none text-dark filter-item cursor-pointer <%= category === 'Rooms' ? 'filter-active' : '' %>">
+        <i class="fa-solid fa-bed"></i>
+        <span>Rooms</span>
+      </a>
+
+      <a href="/listings?category=Iconic Cities"
+         class="text-decoration-none text-dark filter-item cursor-pointer <%= category === 'Iconic Cities' ? 'filter-active' : '' %>">
+        <i class="fa-solid fa-mountain-city"></i>
+        <span>Iconic Cities</span>
+      </a>
+
+      <a href="/listings?category=Mountains"
+         class="text-decoration-none text-dark filter-item cursor-pointer <%= category === 'Mountains' ? 'filter-active' : '' %>">
+        <i class="fa-brands fa-fort-awesome"></i>
+        <span>Mountains</span>
+      </a>
+
+      <a href="/listings?category=Amazing Pools"
+         class="text-decoration-none text-dark filter-item cursor-pointer <%= category === 'Amazing Pools' ? 'filter-active' : '' %>">
+        <i class="fa-solid fa-person-swimming"></i>
+        <span>Amazing Pools</span>
+      </a>
+
+      <a href="/listings?category=Camping"
+         class="text-decoration-none text-dark filter-item cursor-pointer <%= category === 'Camping' ? 'filter-active' : '' %>">
+        <i class="fa-solid fa-campground"></i>
+        <span>Camping</span>
+      </a>
+
+      <a href="/listings?category=Farms"
+         class="text-decoration-none text-dark filter-item cursor-pointer <%= category === 'Farms' ? 'filter-active' : '' %>">
+        <i class="fa-solid fa-tractor"></i>
+        <span>Farms</span>
+      </a>
+
+      <a href="/listings?category=Arctic"
+         class="text-decoration-none text-dark filter-item cursor-pointer <%= category === 'Arctic' ? 'filter-active' : '' %>">
+        <i class="fa-solid fa-snowflake"></i>
+        <span>Arctic</span>
+      </a>
+
+      <a href="/listings?category=Domes"
+         class="text-decoration-none text-dark filter-item cursor-pointer <%= category === 'Domes' ? 'filter-active' : '' %>">
+        <i class="fa-solid fa-igloo"></i>
+        <span>Domes</span>
+      </a>
+
+      <a href="/listings?category=Boats"
+         class="text-decoration-none text-dark filter-item cursor-pointer <%= category === 'Boats' ? 'filter-active' : '' %>">
+        <i class="fa-solid fa-ship"></i>
+        <span>Boats</span>
+      </a>
+    </div>
+
+    <!-- LEFT (sm): dropdown categories -->
+    <div class="d-flex d-md-none flex-grow-1">
+      <select
+        class="form-select cursor-pointer"
+        onchange="if (this.value) window.location.href=this.value;">
+        <option value="">Select a category</option>
+        <option value="/listings?category=Trending" <%= category === 'Trending' ? 'selected' : '' %>>Trending</option>
+        <option value="/listings?category=Rooms" <%= category === 'Rooms' ? 'selected' : '' %>>Rooms</option>
+        <option value="/listings?category=Iconic Cities" <%= category === 'Iconic Cities' ? 'selected' : '' %>>Iconic Cities</option>
+        <option value="/listings?category=Mountains" <%= category === 'Mountains' ? 'selected' : '' %>>Mountains</option>
+        <option value="/listings?category=Amazing Pools" <%= category === 'Amazing Pools' ? 'selected' : '' %>>Amazing Pools</option>
+        <option value="/listings?category=Camping" <%= category === 'Camping' ? 'selected' : '' %>>Camping</option>
+        <option value="/listings?category=Farms" <%= category === 'Farms' ? 'selected' : '' %>>Farms</option>
+        <option value="/listings?category=Arctic" <%= category === 'Arctic' ? 'selected' : '' %>>Arctic</option>
+        <option value="/listings?category=Domes" <%= category === 'Domes' ? 'selected' : '' %>>Domes</option>
+        <option value="/listings?category=Boats" <%= category === 'Boats' ? 'selected' : '' %>>Boats</option>
+      </select>
+    </div>
+
+    <!-- RIGHT: tax toggle -->
+    <div class="border rounded-pill px-4 py-2 d-flex align-items-center">
+      <div class="form-check-reverse form-switch m-0">
+        <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="flexSwitchCheckDefault">
+        <label class="form-check-label ms-2" for="flexSwitchCheckDefault">
+          Display total after taxes
+        </label>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
