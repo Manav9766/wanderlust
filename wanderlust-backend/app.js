@@ -21,20 +21,39 @@ const User = require("./models/user.js");
 
 const ExpressError = require("./utils/ExpressError.js");
 
+// -------- SECURITY / CORS (must be BEFORE routes) --------
+const helmet = require("helmet");
+const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 
+const allowedOrigins = [
+  "https://wanderlust-6c01.vercel.app",
+  "https://wanderlust-beta-three.vercel.app",
+  process.env.FRONTEND_URL, // set this on Render to your Vercel URL
+  "http://localhost:5173",
+].filter(Boolean);
 
-// Routers (EJS)
-const listingRouter = require("./routes/listing.js");
-const reviewRouter = require("./routes/review.js");
-const userRouter = require("./routes/user.js");
+// Global CORS (IMPORTANT: credentials true + dynamic origin)
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // Postman / server-to-server
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("CORS blocked: " + origin));
+    },
+    credentials: true,
+  })
+);
 
-// Routers (API)
-const apiListingsRouter = require("./routes/api/listings.js");
-const apiAuthRouter = require("./routes/api/auth.js");
-const apiUsersRouter = require("./routes/api/users.js"); // only if you actually use this
-const apiAiRouter = require("./routes/api/ai");
+// Handle preflight requests
+app.options("*", cors({ origin: allowedOrigins, credentials: true }));
 
-
+// Helmet (safe headers; keep CSP off to avoid EJS issues)
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
 
 // -------------------- DB --------------------
 const dbUrl = process.env.ATLASDB_URL;
@@ -57,7 +76,6 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Must be BEFORE any route that reads req.cookies
 app.use(cookieParser());
-app.use("/api/ai", apiAiRouter);
 
 // -------------------- Session / Flash / Passport (EJS auth) --------------------
 const sessionSecret = process.env.SESSION_SECRET || "dev_session_secret_change_me";
@@ -105,37 +123,18 @@ app.use((req, res, next) => {
   res.locals.MAP_TOKEN = process.env.MAP_TOKEN;
   next();
 });
-//----------- SECURITY HARDENING -----------------
-const helmet = require("helmet");
-const cors = require("cors");
-const rateLimit = require("express-rate-limit");
 
-const allowedOrigins = [
-  "https://wanderlust-6c01.vercel.app",
-  "https://wanderlust-beta-three.vercel.app",
-  process.env.FRONTEND_URL,
-  "http://localhost:5173",
-].filter(Boolean);
+// -------------------- Routers --------------------
+// Routers (EJS)
+const listingRouter = require("./routes/listing.js");
+const reviewRouter = require("./routes/review.js");
+const userRouter = require("./routes/user.js");
 
-// CORS for API
-app.use(
-  "/api",
-  cors({
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true); // Postman / server
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error("CORS blocked: " + origin));
-    },
-  })
-);
-
-// Helmet (API only)
-app.use(
-  "/api",
-  helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
-);
+// Routers (API)
+const apiListingsRouter = require("./routes/api/listings.js");
+const apiAuthRouter = require("./routes/api/auth.js");
+const apiUsersRouter = require("./routes/api/users.js");
+const apiAiRouter = require("./routes/api/ai");
 
 // Rate limit auth endpoints
 const authLimiter = rateLimit({
@@ -144,20 +143,18 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
 app.use("/api/auth", authLimiter);
-
-
-// -------------------- Routes -----------------
-// EJS routes
-app.use("/listings", listingRouter);
-app.use("/listings/:id/reviews", reviewRouter);
-app.use("/", userRouter);
 
 // API routes
 app.use("/api/listings", apiListingsRouter);
 app.use("/api/auth", apiAuthRouter);
-app.use("/api/users", apiUsersRouter); 
+app.use("/api/users", apiUsersRouter);
+app.use("/api/ai", apiAiRouter);
+
+// EJS routes
+app.use("/listings", listingRouter);
+app.use("/listings/:id/reviews", reviewRouter);
+app.use("/", userRouter);
 
 // -------------------- 404 --------------------
 app.all(/.*/, (req, res, next) => {
@@ -166,13 +163,11 @@ app.all(/.*/, (req, res, next) => {
 
 // -------------------- Error Handler ----------
 app.use((err, req, res, next) => {
-  // Mongoose validation errors should be 400
   if (err.name === "ValidationError") err.statusCode = 400;
 
   const statusCode = err.statusCode || 500;
   const message = err.message || "Something went wrong";
 
-  // API errors return JSON
   if (req.originalUrl.startsWith("/api")) {
     return res.status(statusCode).json({
       message,
@@ -180,11 +175,10 @@ app.use((err, req, res, next) => {
     });
   }
 
-  // Web errors render EJS
   res.status(statusCode).render("error.ejs", { message });
 });
 
-//Server 
+// -------------------- Server --------------------
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
