@@ -37,14 +37,20 @@ app.use(
   cors({
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(null, false);
+
+      if (allowedOrigins.includes(origin)) {
+        return cb(null, origin);
+      }
+
+      return cb(null, origin);
     },
     credentials: true,
   })
 );
 
-app.options(/.*/, cors());
+// preflight
+app.options("*", cors({ origin: allowedOrigins, credentials: true }));
+
 
 // -------------------- SECURITY --------------------
 app.use(
