@@ -27,9 +27,8 @@ const ExpressError = require("./utils/ExpressError");
 
 // -------------------- CORS --------------------
 const allowedOrigins = [
-  // "https://wanderlust-6c01.vercel.app",
-  "https://wanderlust-j3bw.vercel.app",
-  // "https://wanderlust-beta-three.vercel.app",
+  "https://wanderlust-6c01.vercel.app",
+  "https://wanderlust-beta-three.vercel.app",
   process.env.FRONTEND_URL,
   "http://localhost:5173",
 ].filter(Boolean);
