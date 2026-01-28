@@ -25,7 +25,6 @@ const rateLimit = require("express-rate-limit");
 
 const ExpressError = require("./utils/ExpressError");
 
-// -------------------- CORS --------------------
 const allowedOrigins = [
   "https://wanderlust-6c01.vercel.app",
   "https://wanderlust-beta-three.vercel.app",
@@ -37,19 +36,15 @@ app.use(
   cors({
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return cb(null, origin);
-      }
-
-      return cb(null, origin);
+      if (allowedOrigins.includes(origin)) return cb(null, origin);
+      return cb(null, origin); // NEVER return false
     },
     credentials: true,
   })
 );
 
-// preflight
-app.options("/.*/", cors({ origin: allowedOrigins, credentials: true }));
+// ✅ REQUIRED for Node 22 / Express
+app.options(/.*/, cors({ origin: allowedOrigins, credentials: true }));
 
 
 // -------------------- SECURITY --------------------
