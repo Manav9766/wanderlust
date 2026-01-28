@@ -21,6 +21,8 @@ const User = require("./models/user.js");
 
 const ExpressError = require("./utils/ExpressError.js");
 
+
+
 // Routers (EJS)
 const listingRouter = require("./routes/listing.js");
 const reviewRouter = require("./routes/review.js");
@@ -29,8 +31,10 @@ const userRouter = require("./routes/user.js");
 // Routers (API)
 const apiListingsRouter = require("./routes/api/listings.js");
 const apiAuthRouter = require("./routes/api/auth.js");
-const apiUsersRouter = require("./routes/api/users.js");
+const apiUsersRouter = require("./routes/api/users.js"); // only if you actually use this
 const apiAiRouter = require("./routes/api/ai");
+
+
 
 // -------------------- DB --------------------
 const dbUrl = process.env.ATLASDB_URL;
@@ -50,19 +54,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
-app.use(cookieParser());
 
-// -------------------- AI API --------------------
+// Must be BEFORE any route that reads req.cookies
+app.use(cookieParser());
 app.use("/api/ai", apiAiRouter);
 
-// -------------------- Session / Auth --------------------
-const sessionSecret = process.env.SESSION_SECRET || "dev_secret";
+// -------------------- Session / Flash / Passport (EJS auth) --------------------
+const sessionSecret = process.env.SESSION_SECRET || "dev_session_secret_change_me";
 
+// handle different export shapes safely
 const MongoStoreFactory = MongoStore?.default || MongoStore;
 const store = MongoStoreFactory.create({
   mongoUrl: dbUrl,
   crypto: { secret: sessionSecret },
   touchAfter: 24 * 3600,
+});
+
+store.on("error", (err) => {
+  console.log("ERROR in MONGO SESSION STORE", err);
 });
 
 const sessionOptions = {
@@ -88,7 +97,7 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-// -------------------- Locals --------------------
+// -------------------- Locals for EJS --------------------
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
@@ -96,8 +105,7 @@ app.use((req, res, next) => {
   res.locals.MAP_TOKEN = process.env.MAP_TOKEN;
   next();
 });
-
-// -------------------- SECURITY (FINAL CORS FIX) --------------------
+//-----------SECURITY HARDENING-----------------
 const helmet = require("helmet");
 const cors = require("cors");
 
@@ -112,14 +120,18 @@ app.use(
   "/api",
   cors({
     origin: (origin, cb) => {
-      if (!origin) return cb(null, true); // Postman / curl
+      if (!origin) return cb(null, true);
       if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error("CORS blocked: " + origin));
+      return cb(new Error("Not allowed by CORS: " + origin));
     },
     credentials: true,
   })
 );
 
+
+const rateLimit = require("express-rate-limit");
+
+// Helmet security headers (apply to API to avoid breaking EJS CSP)
 app.use(
   "/api",
   helmet({
@@ -127,41 +139,50 @@ app.use(
   })
 );
 
-// -------------------- Rate Limit --------------------
-const rateLimit = require("express-rate-limit");
 
+app.use(
+  "/api",
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
+
+// Rate limit auth endpoints (protect login/signup)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 50,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50,                  // 50 requests per window per IP
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 app.use("/api/auth", authLimiter);
 
-// -------------------- Routes --------------------
-// EJS
+// -------------------- Routes -----------------
+// EJS routes
 app.use("/listings", listingRouter);
 app.use("/listings/:id/reviews", reviewRouter);
 app.use("/", userRouter);
 
-// API
+// API routes
 app.use("/api/listings", apiListingsRouter);
 app.use("/api/auth", apiAuthRouter);
-app.use("/api/users", apiUsersRouter);
+app.use("/api/users", apiUsersRouter); 
 
 // -------------------- 404 --------------------
 app.all(/.*/, (req, res, next) => {
   next(new ExpressError(404, "Page Not Found!"));
 });
 
-// -------------------- Error Handler --------------------
+// -------------------- Error Handler ----------
 app.use((err, req, res, next) => {
+  // Mongoose validation errors should be 400
   if (err.name === "ValidationError") err.statusCode = 400;
 
   const statusCode = err.statusCode || 500;
   const message = err.message || "Something went wrong";
 
+  // API errors return JSON
   if (req.originalUrl.startsWith("/api")) {
     return res.status(statusCode).json({
       message,
@@ -169,11 +190,12 @@ app.use((err, req, res, next) => {
     });
   }
 
+  // Web errors render EJS
   res.status(statusCode).render("error.ejs", { message });
 });
 
-// -------------------- Server --------------------
+//Server 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`server is running on port ${PORT}`);
 });
