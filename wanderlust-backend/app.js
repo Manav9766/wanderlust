@@ -17,84 +17,79 @@ const flash = require("connect-flash");
 
 const passport = require("passport");
 const LocalStrategy = require("passport-local");
-const User = require("./models/user");
+const User = require("./models/user.js");
 
-const helmet = require("helmet");
-const cors = require("cors");
-const rateLimit = require("express-rate-limit");
+const ExpressError = require("./utils/ExpressError.js");
 
-const ExpressError = require("./utils/ExpressError");
 
-// -------------------- CORS (FIXED) --------------------
-const allowedOrigins = [
-  "https://wanderlust-6c01.vercel.app",
-  "https://wanderlust-beta-three.vercel.app",
-  process.env.FRONTEND_URL,
-  "http://localhost:5173",
-].filter(Boolean);
 
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true); // Postman / SSR
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(null, false); // ❗ DO NOT throw
-    },
-    credentials: true,
-  })
-);
+// Routers (EJS)
+const listingRouter = require("./routes/listing.js");
+const reviewRouter = require("./routes/review.js");
+const userRouter = require("./routes/user.js");
 
-// FIXED preflight — NO "*"
-app.options(/.*/, cors());
+// Routers (API)
+const apiListingsRouter = require("./routes/api/listings.js");
+const apiAuthRouter = require("./routes/api/auth.js");
+const apiUsersRouter = require("./routes/api/users.js"); // only if you actually use this
+const apiAiRouter = require("./routes/api/ai");
 
-// -------------------- SECURITY --------------------
-app.use(
-  helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
-);
+
 
 // -------------------- DB --------------------
-mongoose
-  .connect(process.env.ATLASDB_URL)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch(console.error);
+const dbUrl = process.env.ATLASDB_URL;
 
-// -------------------- VIEW ENGINE --------------------
+mongoose
+  .connect(dbUrl)
+  .then(() => console.log("connected to DB"))
+  .catch((err) => console.log(err));
+
+// -------------------- View Engine --------------------
 app.engine("ejs", ejsMate);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// -------------------- CORE MIDDLEWARE --------------------
+// -------------------- Core Middleware --------------------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 app.use(express.static(path.join(__dirname, "public")));
-app.use(cookieParser());
 
-// -------------------- SESSION --------------------
-const store = MongoStore.create({
-  mongoUrl: process.env.ATLASDB_URL,
-  crypto: { secret: process.env.SESSION_SECRET },
+// Must be BEFORE any route that reads req.cookies
+app.use(cookieParser());
+app.use("/api/ai", apiAiRouter);
+
+// -------------------- Session / Flash / Passport (EJS auth) --------------------
+const sessionSecret = process.env.SESSION_SECRET || "dev_session_secret_change_me";
+
+// handle different export shapes safely
+const MongoStoreFactory = MongoStore?.default || MongoStore;
+const store = MongoStoreFactory.create({
+  mongoUrl: dbUrl,
+  crypto: { secret: sessionSecret },
+  touchAfter: 24 * 3600,
 });
 
-app.use(
-  session({
-    store,
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    },
-  })
-);
+store.on("error", (err) => {
+  console.log("ERROR in MONGO SESSION STORE", err);
+});
 
+const sessionOptions = {
+  store,
+  secret: sessionSecret,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  },
+};
+
+app.use(session(sessionOptions));
 app.use(flash());
 
-// -------------------- PASSPORT --------------------
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -102,52 +97,103 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
-// -------------------- LOCALS --------------------
+// -------------------- Locals for EJS --------------------
 app.use((req, res, next) => {
   res.locals.success = req.flash("success");
   res.locals.error = req.flash("error");
   res.locals.currUser = req.user;
+  res.locals.MAP_TOKEN = process.env.MAP_TOKEN;
   next();
 });
+//-----------SECURITY HARDENING-----------------
+const helmet = require("helmet");
+const cors = require("cors");
 
-// -------------------- RATE LIMIT --------------------
+const allowedOrigins = [
+  process.env.FRONTEND_URL,          // your Vercel domain (set on Render)
+  "http://localhost:5173",
+].filter(Boolean);
+
 app.use(
-  "/api/auth",
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 50,
+  "/api",
+  cors({
+    origin: (origin, cb) => {
+      // allow server-to-server / Postman / curl (no origin)
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS: " + origin));
+    },
+    credentials: true,
   })
 );
 
-// -------------------- ROUTES --------------------
-app.use("/api/listings", require("./routes/api/listings"));
-app.use("/api/auth", require("./routes/api/auth"));
-app.use("/api/users", require("./routes/api/users"));
-app.use("/api/ai", require("./routes/api/ai"));
+const rateLimit = require("express-rate-limit");
 
-app.use("/listings", require("./routes/listing"));
-app.use("/listings/:id/reviews", require("./routes/review"));
-app.use("/", require("./routes/user"));
+// Helmet security headers (apply to API to avoid breaking EJS CSP)
+app.use(
+  "/api",
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
+
+
+app.use(
+  "/api",
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
+
+// Rate limit auth endpoints (protect login/signup)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50,                  // 50 requests per window per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use("/api/auth", authLimiter);
+
+// -------------------- Routes -----------------
+// EJS routes
+app.use("/listings", listingRouter);
+app.use("/listings/:id/reviews", reviewRouter);
+app.use("/", userRouter);
+
+// API routes
+app.use("/api/listings", apiListingsRouter);
+app.use("/api/auth", apiAuthRouter);
+app.use("/api/users", apiUsersRouter); 
 
 // -------------------- 404 --------------------
 app.all(/.*/, (req, res, next) => {
-  next(new ExpressError(404, "Page Not Found"));
+  next(new ExpressError(404, "Page Not Found!"));
 });
 
-// -------------------- ERROR HANDLER --------------------
+// -------------------- Error Handler ----------
 app.use((err, req, res, next) => {
-  const status = err.statusCode || 500;
+  // Mongoose validation errors should be 400
+  if (err.name === "ValidationError") err.statusCode = 400;
+
+  const statusCode = err.statusCode || 500;
   const message = err.message || "Something went wrong";
 
+  // API errors return JSON
   if (req.originalUrl.startsWith("/api")) {
-    return res.status(status).json({ message });
+    return res.status(statusCode).json({
+      message,
+      ...(process.env.NODE_ENV !== "production" && { stack: err.stack }),
+    });
   }
 
-  res.status(status).render("error", { message });
+  // Web errors render EJS
+  res.status(statusCode).render("error.ejs", { message });
 });
 
-// -------------------- SERVER --------------------
+//Server 
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log(`server is running on port ${PORT}`);
 });
