@@ -108,12 +108,25 @@ app.use((req, res, next) => {
 //-----------SECURITY HARDENING-----------------
 const helmet = require("helmet");
 const cors = require("cors");
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,          // your Vercel domain (set on Render)
+  "http://localhost:5173",
+].filter(Boolean);
+
 app.use(
+  "/api",
   cors({
-    origin: "http://localhost:5173",
+    origin: (origin, cb) => {
+      // allow server-to-server / Postman / curl (no origin)
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS: " + origin));
+    },
     credentials: true,
   })
 );
+
 const rateLimit = require("express-rate-limit");
 
 // Helmet security headers (apply to API to avoid breaking EJS CSP)
@@ -124,12 +137,6 @@ app.use(
   })
 );
 
-// CORS for React (cookies need credentials:true)
-const allowedOrigins = [
-  process.env.FRONTEND_URL,          // production React URL (later)
-  "http://localhost:5173",           // Vite dev
-  "http://localhost:3000",           // CRA dev
-].filter(Boolean);
 
 app.use(
   "/api",
