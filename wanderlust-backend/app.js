@@ -110,9 +110,7 @@ const helmet = require("helmet");
 const cors = require("cors");
 
 const allowedOrigins = [
-  "https://wanderlust-6c01.vercel.app",
-  "https://wanderlust-beta-three.vercel.app",
-  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL,          // your Vercel domain (set on Render)
   "http://localhost:5173",
 ].filter(Boolean);
 
@@ -120,6 +118,7 @@ app.use(
   "/api",
   cors({
     origin: (origin, cb) => {
+      // allow server-to-server / Postman / curl (no origin)
       if (!origin) return cb(null, true);
       if (allowedOrigins.includes(origin)) return cb(null, true);
       return cb(new Error("Not allowed by CORS: " + origin));
@@ -127,7 +126,6 @@ app.use(
     credentials: true,
   })
 );
-
 
 const rateLimit = require("express-rate-limit");
 
