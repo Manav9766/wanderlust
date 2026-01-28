@@ -29,21 +29,28 @@ const rateLimit = require("express-rate-limit");
 const allowedOrigins = [
   "https://wanderlust-6c01.vercel.app",
   "https://wanderlust-beta-three.vercel.app",
-  process.env.FRONTEND_URL, // set this on Render to your Vercel URL
+  process.env.FRONTEND_URL,
   "http://localhost:5173",
 ].filter(Boolean);
 
-// Global CORS (IMPORTANT: credentials true + dynamic origin)
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin) return cb(null, true); // Postman / server-to-server
-      if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error("CORS blocked: " + origin));
+      // allow server-to-server / Postman
+      if (!origin) return cb(null, true);
+
+      // allow known frontends
+      if (allowedOrigins.includes(origin)) {
+        return cb(null, true);
+      }
+
+      // ❗ DO NOT THROW ERROR — silently reject
+      return cb(null, false);
     },
     credentials: true,
   })
 );
+
 
 // Handle preflight requests
 app.options("*", cors({ origin: allowedOrigins, credentials: true }));
