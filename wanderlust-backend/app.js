@@ -105,31 +105,31 @@ app.use((req, res, next) => {
   res.locals.MAP_TOKEN = process.env.MAP_TOKEN;
   next();
 });
-//-----------SECURITY HARDENING-----------------
+//----------- SECURITY HARDENING -----------------
 const helmet = require("helmet");
 const cors = require("cors");
+const rateLimit = require("express-rate-limit");
 
 const allowedOrigins = [
-  process.env.FRONTEND_URL,          // your Vercel domain (set on Render)
+  "https://wanderlust-6c01.vercel.app",
+  "https://wanderlust-beta-three.vercel.app",
+  process.env.FRONTEND_URL,
   "http://localhost:5173",
 ].filter(Boolean);
 
+// CORS for API
 app.use(
   "/api",
   cors({
     origin: (origin, cb) => {
-      // allow server-to-server / Postman / curl (no origin)
-      if (!origin) return cb(null, true);
+      if (!origin) return cb(null, true); // Postman / server
       if (allowedOrigins.includes(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS: " + origin));
+      return cb(new Error("CORS blocked: " + origin));
     },
-    credentials: true,
   })
 );
 
-const rateLimit = require("express-rate-limit");
-
-// Helmet security headers (apply to API to avoid breaking EJS CSP)
+// Helmet (API only)
 app.use(
   "/api",
   helmet({
@@ -137,24 +137,16 @@ app.use(
   })
 );
 
-
-app.use(
-  "/api",
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
-
-// Rate limit auth endpoints (protect login/signup)
+// Rate limit auth endpoints
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50,                  // 50 requests per window per IP
+  windowMs: 15 * 60 * 1000,
+  max: 50,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 app.use("/api/auth", authLimiter);
+
 
 // -------------------- Routes -----------------
 // EJS routes
