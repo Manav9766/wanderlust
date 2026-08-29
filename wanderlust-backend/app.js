@@ -32,21 +32,19 @@ const allowedOrigins = [
   "http://localhost:5173",
 ].filter(Boolean);
 
-const corsOptions = {
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return cb(null, true);
-    }
-
-    return cb(new Error(`CORS blocked origin: ${origin}`));
-  },
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, origin);
+      return cb(null, origin); // NEVER return false
+    },
+    credentials: true,
+  })
+);
 
 // ✅ REQUIRED for Node 22 / Express
-app.options(/.*/, cors(corsOptions));
+app.options(/.*/, cors({ origin: allowedOrigins, credentials: true }));
 
 
 // -------------------- SECURITY --------------------
