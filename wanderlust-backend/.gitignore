@@ -12,8 +12,10 @@ node_modules/
 # Build output (if any)
 dist/
 
-# Environment variables
+# Environment variables and local overrides
 .env
+.env.*
+!.env.example
 
 # OS files
 .DS_Store
