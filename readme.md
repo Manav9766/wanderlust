@@ -63,7 +63,7 @@ The project is built using the MERN stack, with a clear separation between front
 
 ## Local development
 
-Requires Node.js and npm, a reachable MongoDB database (the backend uses `ATLASDB_URL`), and Cloudinary credentials for image uploads.
+Requires Node.js **20.19+ or 22.12+** (as required by the frontend's Vite 7 toolchain) and npm, a reachable MongoDB database (the backend uses `ATLASDB_URL`), and Cloudinary credentials for image uploads. Check `node --version` before installing dependencies; older Node.js releases can fail to run the frontend development server.
 
 1. Install dependencies separately in `wanderlust-backend/` and `wanderlust-frontend/` with `npm install`.
 2. Create `wanderlust-backend/.env` with your own credentials (do not commit it):
